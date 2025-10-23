@@ -26,6 +26,19 @@ export interface InventoryOverview extends Product {
   isLowStock: boolean;
 }
 
+export interface Transfer {
+  id: number;
+  productId: number;
+  fromWarehouseId: number;
+  toWarehouseId: number;
+  quantity: number;
+  status: 'pending' | 'completed' | 'cancelled';
+  requestedBy: string;
+  requestedAt: string;
+  completedAt?: string;
+  notes?: string;
+}
+
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export interface AppProps {
