@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "productId": 1,
+    "alertType": "overstocked",
+    "currentStock": 400,
+    "reorderPoint": 100,
+    "recommendedOrder": 0,
+    "status": "active",
+    "createdAt": "2025-10-23T13:34:16.739Z"
+  },
+  {
+    "id": 2,
+    "productId": 2,
+    "alertType": "overstocked",
+    "currentStock": 2000,
+    "reorderPoint": 500,
+    "recommendedOrder": 0,
+    "status": "active",
+    "createdAt": "2025-10-23T13:34:16.739Z"
+  },
+  {
+    "id": 3,
+    "productId": 3,
+    "alertType": "overstocked",
+    "currentStock": 4300,
+    "reorderPoint": 1000,
+    "recommendedOrder": 0,
+    "status": "active",
+    "createdAt": "2025-10-23T13:34:16.739Z"
+  },
+  {
+    "id": 4,
+    "productId": 4,
+    "alertType": "overstocked",
+    "currentStock": 1550,
+    "reorderPoint": 750,
+    "recommendedOrder": 0,
+    "status": "active",
+    "createdAt": "2025-10-23T13:34:16.739Z"
+  }
+]

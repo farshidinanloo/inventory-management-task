@@ -39,6 +39,33 @@ export interface Transfer {
   notes?: string;
 }
 
+export interface Alert {
+  id: number;
+  productId: number;
+  alertType: 'critical' | 'low' | 'overstocked';
+  currentStock: number;
+  reorderPoint: number;
+  recommendedOrder: number;
+  status: 'active' | 'acknowledged' | 'resolved';
+  createdAt: string;
+  acknowledgedAt?: string;
+  resolvedAt?: string;
+  acknowledgedBy?: string;
+  notes?: string;
+}
+
+export interface StockStatus {
+  productId: number;
+  productName: string;
+  sku: string;
+  category: string;
+  totalStock: number;
+  reorderPoint: number;
+  status: 'critical' | 'low' | 'adequate' | 'overstocked';
+  stockPercentage: number;
+  recommendedOrder: number;
+}
+
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export interface AppProps {

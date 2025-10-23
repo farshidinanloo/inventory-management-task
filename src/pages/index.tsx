@@ -32,7 +32,7 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import WarningIcon from '@mui/icons-material/Warning';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import NatureIcon from '@mui/icons-material/Nature';
-import { Product, Warehouse, Stock, InventoryOverview } from '@/types';
+import { Product, Warehouse, Stock, InventoryOverview, Alert as AlertType } from '@/types';
 
 // Dynamic imports for charts to avoid SSR issues
 const BarChart = dynamic(() => import('recharts').then(mod => mod.BarChart), { ssr: false });
@@ -50,6 +50,7 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [stock, setStock] = useState<Stock[]>([]);
+  const [alerts, setAlerts] = useState<AlertType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const theme = useTheme();
@@ -58,25 +59,28 @@ export default function Home() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [productsRes, warehousesRes, stockRes] = await Promise.all([
+        const [productsRes, warehousesRes, stockRes, alertsRes] = await Promise.all([
           fetch('/api/products'),
           fetch('/api/warehouses'),
           fetch('/api/stock'),
+          fetch('/api/alerts'),
         ]);
 
-        if (!productsRes.ok || !warehousesRes.ok || !stockRes.ok) {
+        if (!productsRes.ok || !warehousesRes.ok || !stockRes.ok || !alertsRes.ok) {
           throw new Error('Failed to fetch data');
         }
 
-        const [productsData, warehousesData, stockData] = await Promise.all([
+        const [productsData, warehousesData, stockData, alertsData] = await Promise.all([
           productsRes.json(),
           warehousesRes.json(),
           stockRes.json(),
+          alertsRes.json(),
         ]);
 
         setProducts(productsData);
         setWarehouses(warehousesData);
         setStock(stockData);
+        setAlerts(alertsData);
         setError(null);
       } catch (err) {
         setError('Failed to load dashboard data. Please try again.');
@@ -168,6 +172,9 @@ export default function Home() {
             <Button color="inherit" component={Link} href="/transfers">
               Transfers
             </Button>
+            <Button color="inherit" component={Link} href="/alerts">
+              Alerts
+            </Button>
           </Toolbar>
         </AppBar>
         <Container sx={{ mt: 4, mb: 4 }}>
@@ -199,6 +206,9 @@ export default function Home() {
             <Button color="inherit" component={Link} href="/transfers">
               Transfers
             </Button>
+            <Button color="inherit" component={Link} href="/alerts">
+              Alerts
+            </Button>
           </Toolbar>
         </AppBar>
         <Container sx={{ mt: 4, mb: 4 }}>
@@ -229,6 +239,9 @@ export default function Home() {
           </Button>
           <Button color="inherit" component={Link} href="/transfers">
             Transfers
+          </Button>
+          <Button color="inherit" component={Link} href="/alerts">
+            Alerts
           </Button>
         </Toolbar>
       </AppBar>
@@ -419,6 +432,71 @@ export default function Home() {
             </Card>
           </Grid>
         </Grid>
+
+        {/* Critical Alerts Section */}
+        {alerts.filter(alert => alert.status === 'active' && alert.alertType === 'critical').length > 0 && (
+          <Card sx={{ mb: 4, border: '2px solid #f44336' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <WarningIcon sx={{ mr: 1, color: '#f44336', fontSize: 28 }} />
+                <Typography variant="h5" sx={{ color: '#f44336', fontWeight: 'bold' }}>
+                  Critical Stock Alerts
+                </Typography>
+              </Box>
+              
+              <Grid container spacing={2}>
+                {alerts
+                  .filter(alert => alert.status === 'active' && alert.alertType === 'critical')
+                  .slice(0, 3)
+                  .map((alert) => {
+                    const product = products.find(p => p.id === alert.productId);
+                    return (
+                      <Grid item xs={12} sm={6} md={4} key={alert.id}>
+                        <Card sx={{ 
+                          bgcolor: alpha('#f44336', 0.1),
+                          border: '1px solid #f44336'
+                        }}>
+                          <CardContent>
+                            <Typography variant="h6" sx={{ color: '#f44336', fontWeight: 'bold' }}>
+                              {product?.name || 'Unknown Product'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                              {product?.sku || 'N/A'}
+                            </Typography>
+                            <Typography variant="body2" sx={{ mb: 1 }}>
+                              <strong>Current Stock:</strong> {alert.currentStock.toLocaleString()}
+                            </Typography>
+                            <Typography variant="body2" sx={{ mb: 1 }}>
+                              <strong>Reorder Point:</strong> {alert.reorderPoint.toLocaleString()}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#f44336', fontWeight: 'bold' }}>
+                              <strong>Recommended Order:</strong> {alert.recommendedOrder.toLocaleString()}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
+              </Grid>
+              
+              {alerts.filter(alert => alert.status === 'active' && alert.alertType === 'critical').length > 3 && (
+                <Box sx={{ mt: 2, textAlign: 'center' }}>
+                  <Button
+                    component={Link}
+                    href="/alerts"
+                    variant="contained"
+                    sx={{
+                      bgcolor: '#f44336',
+                      '&:hover': { bgcolor: '#d32f2f' }
+                    }}
+                  >
+                    View All Alerts ({alerts.filter(alert => alert.status === 'active' && alert.alertType === 'critical').length})
+                  </Button>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Enhanced Inventory Overview Table */}
         <Card>
