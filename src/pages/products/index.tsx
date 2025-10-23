@@ -24,44 +24,45 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import InventoryIcon from '@mui/icons-material/Inventory';
+import { Product } from '@/types';
 
-export default function Warehouses() {
-  const [warehouses, setWarehouses] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState(null);
+export default function Products() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [open, setOpen] = useState<boolean>(false);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchWarehouses();
+    fetchProducts();
   }, []);
 
-  const fetchWarehouses = () => {
-    fetch('/api/warehouses')
+  const fetchProducts = () => {
+    fetch('/api/products')
       .then((res) => res.json())
-      .then((data) => setWarehouses(data));
+      .then((data) => setProducts(data));
   };
 
-  const handleClickOpen = (id) => {
-    setSelectedWarehouseId(id);
+  const handleClickOpen = (id: number) => {
+    setSelectedProductId(id);
     setOpen(true);
   };
 
   const handleClose = () => {
     setOpen(false);
-    setSelectedWarehouseId(null);
+    setSelectedProductId(null);
   };
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`/api/warehouses/${selectedWarehouseId}`, {
+      const res = await fetch(`/api/products/${selectedProductId}`, {
         method: 'DELETE',
       });
 
       if (res.ok) {
-        setWarehouses(warehouses.filter((warehouse) => warehouse.id !== selectedWarehouseId));
+        setProducts(products.filter((product) => product.id !== selectedProductId));
         handleClose();
       }
     } catch (error) {
-      console.error('Error deleting warehouse:', error);
+      console.error('Error deleting product:', error);
     }
   };
 
@@ -91,15 +92,15 @@ export default function Warehouses() {
       <Container sx={{ mt: 4, mb: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4" component="h1">
-            Warehouses
+            Products
           </Typography>
           <Button 
             variant="contained" 
             color="primary" 
             component={Link} 
-            href="/warehouses/add"
+            href="/products/add"
           >
-            Add Warehouse
+            Add Product
           </Button>
         </Box>
 
@@ -107,30 +108,34 @@ export default function Warehouses() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell><strong>Code</strong></TableCell>
+                <TableCell><strong>SKU</strong></TableCell>
                 <TableCell><strong>Name</strong></TableCell>
-                <TableCell><strong>Location</strong></TableCell>
+                <TableCell><strong>Category</strong></TableCell>
+                <TableCell align="right"><strong>Unit Cost</strong></TableCell>
+                <TableCell align="right"><strong>Reorder Point</strong></TableCell>
                 <TableCell><strong>Actions</strong></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {warehouses.map((warehouse) => (
-                <TableRow key={warehouse.id}>
-                  <TableCell>{warehouse.code}</TableCell>
-                  <TableCell>{warehouse.name}</TableCell>
-                  <TableCell>{warehouse.location}</TableCell>
+              {products.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell>{product.sku}</TableCell>
+                  <TableCell>{product.name}</TableCell>
+                  <TableCell>{product.category}</TableCell>
+                  <TableCell align="right">${product.unitCost.toFixed(2)}</TableCell>
+                  <TableCell align="right">{product.reorderPoint}</TableCell>
                   <TableCell>
                     <IconButton
                       color="primary"
                       component={Link}
-                      href={`/warehouses/edit/${warehouse.id}`}
+                      href={`/products/edit/${product.id}`}
                       size="small"
                     >
                       <EditIcon />
                     </IconButton>
                     <IconButton
                       color="error"
-                      onClick={() => handleClickOpen(warehouse.id)}
+                      onClick={() => handleClickOpen(product.id)}
                       size="small"
                     >
                       <DeleteIcon />
@@ -138,10 +143,10 @@ export default function Warehouses() {
                   </TableCell>
                 </TableRow>
               ))}
-              {warehouses.length === 0 && (
+              {products.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} align="center">
-                    No warehouses available.
+                  <TableCell colSpan={6} align="center">
+                    No products available.
                   </TableCell>
                 </TableRow>
               )}
@@ -150,10 +155,10 @@ export default function Warehouses() {
         </TableContainer>
 
         <Dialog open={open} onClose={handleClose}>
-          <DialogTitle>Delete Warehouse</DialogTitle>
+          <DialogTitle>Delete Product</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to delete this warehouse? This action cannot be undone.
+              Are you sure you want to delete this product? This action cannot be undone.
             </DialogContentText>
           </DialogContent>
           <DialogActions>

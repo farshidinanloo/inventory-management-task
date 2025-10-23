@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
@@ -10,40 +10,27 @@ import {
   Paper,
   AppBar,
   Toolbar,
-  CircularProgress,
 } from '@mui/material';
 import InventoryIcon from '@mui/icons-material/Inventory';
+import { Warehouse } from '@/types';
 
-export default function EditWarehouse() {
+export default function AddWarehouse() {
   const [warehouse, setWarehouse] = useState({
     name: '',
     location: '',
     code: '',
   });
-  const [loading, setLoading] = useState(true);
 
   const router = useRouter();
-  const { id } = router.query;
 
-  useEffect(() => {
-    if (id) {
-      fetch(`/api/warehouses/${id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setWarehouse(data);
-          setLoading(false);
-        });
-    }
-  }, [id]);
-
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setWarehouse({ ...warehouse, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch(`/api/warehouses/${id}`, {
-      method: 'PUT',
+    const res = await fetch('/api/warehouses', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(warehouse),
     });
@@ -51,14 +38,6 @@ export default function EditWarehouse() {
       router.push('/warehouses');
     }
   };
-
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
 
   return (
     <>
@@ -86,7 +65,7 @@ export default function EditWarehouse() {
       <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>
-            Edit Warehouse
+            Add New Warehouse
           </Typography>
           <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
             <TextField
@@ -123,7 +102,7 @@ export default function EditWarehouse() {
                 variant="contained"
                 color="primary"
               >
-                Update Warehouse
+                Add Warehouse
               </Button>
               <Button
                 fullWidth

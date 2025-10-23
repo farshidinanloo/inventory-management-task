@@ -12,6 +12,7 @@ import {
   Toolbar,
 } from '@mui/material';
 import InventoryIcon from '@mui/icons-material/Inventory';
+import { Product } from '@/types';
 
 export default function AddProduct() {
   const [product, setProduct] = useState({
@@ -24,11 +25,11 @@ export default function AddProduct() {
 
   const router = useRouter();
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProduct({ ...product, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await fetch('/api/products', {
       method: 'POST',

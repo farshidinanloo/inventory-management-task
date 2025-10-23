@@ -21,11 +21,12 @@ import {
 import InventoryIcon from '@mui/icons-material/Inventory';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
 import CategoryIcon from '@mui/icons-material/Category';
+import { Product, Warehouse, Stock, InventoryOverview } from '@/types';
 
 export default function Home() {
-  const [products, setProducts] = useState([]);
-  const [warehouses, setWarehouses] = useState([]);
-  const [stock, setStock] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [stock, setStock] = useState<Stock[]>([]);
 
   useEffect(() => {
     // Fetch all data
@@ -41,15 +42,15 @@ export default function Home() {
   }, []);
 
   // Calculate total inventory value
-  const totalValue = stock.reduce((sum, item) => {
+  const totalValue = stock.reduce((sum: number, item: Stock) => {
     const product = products.find(p => p.id === item.productId);
     return sum + (product ? product.unitCost * item.quantity : 0);
   }, 0);
 
   // Get products with stock across all warehouses
-  const inventoryOverview = products.map(product => {
+  const inventoryOverview: InventoryOverview[] = products.map(product => {
     const productStock = stock.filter(s => s.productId === product.id);
-    const totalQuantity = productStock.reduce((sum, s) => sum + s.quantity, 0);
+    const totalQuantity = productStock.reduce((sum: number, s: Stock) => sum + s.quantity, 0);
     return {
       ...product,
       totalQuantity,

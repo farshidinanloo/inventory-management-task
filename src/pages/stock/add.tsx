@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
@@ -10,31 +10,49 @@ import {
   Paper,
   AppBar,
   Toolbar,
+  MenuItem,
 } from '@mui/material';
 import InventoryIcon from '@mui/icons-material/Inventory';
+import { Stock, Product, Warehouse } from '@/types';
 
-export default function AddWarehouse() {
-  const [warehouse, setWarehouse] = useState({
-    name: '',
-    location: '',
-    code: '',
+export default function AddStock() {
+  const [stock, setStock] = useState({
+    productId: '',
+    warehouseId: '',
+    quantity: '',
   });
+  const [products, setProducts] = useState<Product[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
 
   const router = useRouter();
 
-  const handleChange = (e) => {
-    setWarehouse({ ...warehouse, [e.target.name]: e.target.value });
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/products').then(res => res.json()),
+      fetch('/api/warehouses').then(res => res.json()),
+    ]).then(([productsData, warehousesData]) => {
+      setProducts(productsData);
+      setWarehouses(warehousesData);
+    });
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setStock({ ...stock, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch('/api/warehouses', {
+    const res = await fetch('/api/stock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(warehouse),
+      body: JSON.stringify({
+        productId: parseInt(stock.productId),
+        warehouseId: parseInt(stock.warehouseId),
+        quantity: parseInt(stock.quantity),
+      }),
     });
     if (res.ok) {
-      router.push('/warehouses');
+      router.push('/stock');
     }
   };
 
@@ -64,34 +82,50 @@ export default function AddWarehouse() {
       <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>
-            Add New Warehouse
+            Add Stock Record
           </Typography>
           <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
             <TextField
               margin="normal"
               required
               fullWidth
-              label="Warehouse Code"
-              name="code"
-              value={warehouse.code}
+              select
+              label="Product"
+              name="productId"
+              value={stock.productId}
               onChange={handleChange}
-            />
+            >
+              {products.map((product) => (
+                <MenuItem key={product.id} value={product.id}>
+                  {product.name} ({product.sku})
+                </MenuItem>
+              ))}
+            </TextField>
             <TextField
               margin="normal"
               required
               fullWidth
-              label="Warehouse Name"
-              name="name"
-              value={warehouse.name}
+              select
+              label="Warehouse"
+              name="warehouseId"
+              value={stock.warehouseId}
               onChange={handleChange}
-            />
+            >
+              {warehouses.map((warehouse) => (
+                <MenuItem key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name} ({warehouse.code})
+                </MenuItem>
+              ))}
+            </TextField>
             <TextField
               margin="normal"
               required
               fullWidth
-              label="Location"
-              name="location"
-              value={warehouse.location}
+              label="Quantity"
+              name="quantity"
+              type="number"
+              inputProps={{ min: '0' }}
+              value={stock.quantity}
               onChange={handleChange}
             />
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
@@ -101,13 +135,13 @@ export default function AddWarehouse() {
                 variant="contained"
                 color="primary"
               >
-                Add Warehouse
+                Add Stock
               </Button>
               <Button
                 fullWidth
                 variant="outlined"
                 component={Link}
-                href="/warehouses"
+                href="/stock"
               >
                 Cancel
               </Button>

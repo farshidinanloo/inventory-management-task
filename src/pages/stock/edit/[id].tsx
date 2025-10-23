@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
@@ -11,38 +11,47 @@ import {
   AppBar,
   Toolbar,
   MenuItem,
+  CircularProgress,
 } from '@mui/material';
 import InventoryIcon from '@mui/icons-material/Inventory';
+import { Stock, Product, Warehouse } from '@/types';
 
-export default function AddStock() {
+export default function EditStock() {
   const [stock, setStock] = useState({
     productId: '',
     warehouseId: '',
     quantity: '',
   });
-  const [products, setProducts] = useState([]);
-  const [warehouses, setWarehouses] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const router = useRouter();
+  const { id } = router.query;
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/products').then(res => res.json()),
-      fetch('/api/warehouses').then(res => res.json()),
-    ]).then(([productsData, warehousesData]) => {
-      setProducts(productsData);
-      setWarehouses(warehousesData);
-    });
-  }, []);
+    if (id) {
+      Promise.all([
+        fetch(`/api/stock/${id}`).then(res => res.json()),
+        fetch('/api/products').then(res => res.json()),
+        fetch('/api/warehouses').then(res => res.json()),
+      ]).then(([stockData, productsData, warehousesData]) => {
+        setStock(stockData);
+        setProducts(productsData);
+        setWarehouses(warehousesData);
+        setLoading(false);
+      });
+    }
+  }, [id]);
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setStock({ ...stock, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch('/api/stock', {
-      method: 'POST',
+    const res = await fetch(`/api/stock/${id}`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         productId: parseInt(stock.productId),
@@ -54,6 +63,14 @@ export default function AddStock() {
       router.push('/stock');
     }
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <>
@@ -81,7 +98,7 @@ export default function AddStock() {
       <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>
-            Add Stock Record
+            Edit Stock Record
           </Typography>
           <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
             <TextField
@@ -134,7 +151,7 @@ export default function AddStock() {
                 variant="contained"
                 color="primary"
               >
-                Add Stock
+                Update Stock
               </Button>
               <Button
                 fullWidth

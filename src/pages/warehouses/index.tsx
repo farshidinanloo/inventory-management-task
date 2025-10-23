@@ -24,62 +24,45 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import InventoryIcon from '@mui/icons-material/Inventory';
+import { Warehouse } from '@/types';
 
-export default function Stock() {
-  const [stock, setStock] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [warehouses, setWarehouses] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [selectedStockId, setSelectedStockId] = useState(null);
+export default function Warehouses() {
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [open, setOpen] = useState<boolean>(false);
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchData();
+    fetchWarehouses();
   }, []);
 
-  const fetchData = () => {
-    Promise.all([
-      fetch('/api/stock').then(res => res.json()),
-      fetch('/api/products').then(res => res.json()),
-      fetch('/api/warehouses').then(res => res.json()),
-    ]).then(([stockData, productsData, warehousesData]) => {
-      setStock(stockData);
-      setProducts(productsData);
-      setWarehouses(warehousesData);
-    });
+  const fetchWarehouses = () => {
+    fetch('/api/warehouses')
+      .then((res) => res.json())
+      .then((data) => setWarehouses(data));
   };
 
-  const getProductName = (productId) => {
-    const product = products.find(p => p.id === productId);
-    return product ? `${product.name} (${product.sku})` : 'Unknown';
-  };
-
-  const getWarehouseName = (warehouseId) => {
-    const warehouse = warehouses.find(w => w.id === warehouseId);
-    return warehouse ? `${warehouse.name} (${warehouse.code})` : 'Unknown';
-  };
-
-  const handleClickOpen = (id) => {
-    setSelectedStockId(id);
+  const handleClickOpen = (id: number) => {
+    setSelectedWarehouseId(id);
     setOpen(true);
   };
 
   const handleClose = () => {
     setOpen(false);
-    setSelectedStockId(null);
+    setSelectedWarehouseId(null);
   };
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`/api/stock/${selectedStockId}`, {
+      const res = await fetch(`/api/warehouses/${selectedWarehouseId}`, {
         method: 'DELETE',
       });
 
       if (res.ok) {
-        setStock(stock.filter((item) => item.id !== selectedStockId));
+        setWarehouses(warehouses.filter((warehouse) => warehouse.id !== selectedWarehouseId));
         handleClose();
       }
     } catch (error) {
-      console.error('Error deleting stock:', error);
+      console.error('Error deleting warehouse:', error);
     }
   };
 
@@ -109,15 +92,15 @@ export default function Stock() {
       <Container sx={{ mt: 4, mb: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4" component="h1">
-            Stock Levels
+            Warehouses
           </Typography>
           <Button 
             variant="contained" 
             color="primary" 
             component={Link} 
-            href="/stock/add"
+            href="/warehouses/add"
           >
-            Add Stock Record
+            Add Warehouse
           </Button>
         </Box>
 
@@ -125,30 +108,30 @@ export default function Stock() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell><strong>Product</strong></TableCell>
-                <TableCell><strong>Warehouse</strong></TableCell>
-                <TableCell align="right"><strong>Quantity</strong></TableCell>
+                <TableCell><strong>Code</strong></TableCell>
+                <TableCell><strong>Name</strong></TableCell>
+                <TableCell><strong>Location</strong></TableCell>
                 <TableCell><strong>Actions</strong></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {stock.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{getProductName(item.productId)}</TableCell>
-                  <TableCell>{getWarehouseName(item.warehouseId)}</TableCell>
-                  <TableCell align="right">{item.quantity}</TableCell>
+              {warehouses.map((warehouse) => (
+                <TableRow key={warehouse.id}>
+                  <TableCell>{warehouse.code}</TableCell>
+                  <TableCell>{warehouse.name}</TableCell>
+                  <TableCell>{warehouse.location}</TableCell>
                   <TableCell>
                     <IconButton
                       color="primary"
                       component={Link}
-                      href={`/stock/edit/${item.id}`}
+                      href={`/warehouses/edit/${warehouse.id}`}
                       size="small"
                     >
                       <EditIcon />
                     </IconButton>
                     <IconButton
                       color="error"
-                      onClick={() => handleClickOpen(item.id)}
+                      onClick={() => handleClickOpen(warehouse.id)}
                       size="small"
                     >
                       <DeleteIcon />
@@ -156,10 +139,10 @@ export default function Stock() {
                   </TableCell>
                 </TableRow>
               ))}
-              {stock.length === 0 && (
+              {warehouses.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={4} align="center">
-                    No stock records available.
+                    No warehouses available.
                   </TableCell>
                 </TableRow>
               )}
@@ -168,10 +151,10 @@ export default function Stock() {
         </TableContainer>
 
         <Dialog open={open} onClose={handleClose}>
-          <DialogTitle>Delete Stock Record</DialogTitle>
+          <DialogTitle>Delete Warehouse</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to delete this stock record? This action cannot be undone.
+              Are you sure you want to delete this warehouse? This action cannot be undone.
             </DialogContentText>
           </DialogContent>
           <DialogActions>

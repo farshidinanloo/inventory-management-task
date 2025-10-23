@@ -24,44 +24,63 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import InventoryIcon from '@mui/icons-material/Inventory';
+import { Stock as StockType, Product, Warehouse } from '@/types';
 
-export default function Products() {
-  const [products, setProducts] = useState([]);
-  const [open, setOpen] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState(null);
+export default function Stock() {
+  const [stock, setStock] = useState<StockType[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [open, setOpen] = useState<boolean>(false);
+  const [selectedStockId, setSelectedStockId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchProducts();
+    fetchData();
   }, []);
 
-  const fetchProducts = () => {
-    fetch('/api/products')
-      .then((res) => res.json())
-      .then((data) => setProducts(data));
+  const fetchData = () => {
+    Promise.all([
+      fetch('/api/stock').then(res => res.json()),
+      fetch('/api/products').then(res => res.json()),
+      fetch('/api/warehouses').then(res => res.json()),
+    ]).then(([stockData, productsData, warehousesData]) => {
+      setStock(stockData);
+      setProducts(productsData);
+      setWarehouses(warehousesData);
+    });
   };
 
-  const handleClickOpen = (id) => {
-    setSelectedProductId(id);
+  const getProductName = (productId: number): string => {
+    const product = products.find(p => p.id === productId);
+    return product ? `${product.name} (${product.sku})` : 'Unknown';
+  };
+
+  const getWarehouseName = (warehouseId: number): string => {
+    const warehouse = warehouses.find(w => w.id === warehouseId);
+    return warehouse ? `${warehouse.name} (${warehouse.code})` : 'Unknown';
+  };
+
+  const handleClickOpen = (id: number) => {
+    setSelectedStockId(id);
     setOpen(true);
   };
 
   const handleClose = () => {
     setOpen(false);
-    setSelectedProductId(null);
+    setSelectedStockId(null);
   };
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`/api/products/${selectedProductId}`, {
+      const res = await fetch(`/api/stock/${selectedStockId}`, {
         method: 'DELETE',
       });
 
       if (res.ok) {
-        setProducts(products.filter((product) => product.id !== selectedProductId));
+        setStock(stock.filter((item) => item.id !== selectedStockId));
         handleClose();
       }
     } catch (error) {
-      console.error('Error deleting product:', error);
+      console.error('Error deleting stock:', error);
     }
   };
 
@@ -91,15 +110,15 @@ export default function Products() {
       <Container sx={{ mt: 4, mb: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4" component="h1">
-            Products
+            Stock Levels
           </Typography>
           <Button 
             variant="contained" 
             color="primary" 
             component={Link} 
-            href="/products/add"
+            href="/stock/add"
           >
-            Add Product
+            Add Stock Record
           </Button>
         </Box>
 
@@ -107,34 +126,30 @@ export default function Products() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell><strong>SKU</strong></TableCell>
-                <TableCell><strong>Name</strong></TableCell>
-                <TableCell><strong>Category</strong></TableCell>
-                <TableCell align="right"><strong>Unit Cost</strong></TableCell>
-                <TableCell align="right"><strong>Reorder Point</strong></TableCell>
+                <TableCell><strong>Product</strong></TableCell>
+                <TableCell><strong>Warehouse</strong></TableCell>
+                <TableCell align="right"><strong>Quantity</strong></TableCell>
                 <TableCell><strong>Actions</strong></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>{product.sku}</TableCell>
-                  <TableCell>{product.name}</TableCell>
-                  <TableCell>{product.category}</TableCell>
-                  <TableCell align="right">${product.unitCost.toFixed(2)}</TableCell>
-                  <TableCell align="right">{product.reorderPoint}</TableCell>
+              {stock.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{getProductName(item.productId)}</TableCell>
+                  <TableCell>{getWarehouseName(item.warehouseId)}</TableCell>
+                  <TableCell align="right">{item.quantity}</TableCell>
                   <TableCell>
                     <IconButton
                       color="primary"
                       component={Link}
-                      href={`/products/edit/${product.id}`}
+                      href={`/stock/edit/${item.id}`}
                       size="small"
                     >
                       <EditIcon />
                     </IconButton>
                     <IconButton
                       color="error"
-                      onClick={() => handleClickOpen(product.id)}
+                      onClick={() => handleClickOpen(item.id)}
                       size="small"
                     >
                       <DeleteIcon />
@@ -142,10 +157,10 @@ export default function Products() {
                   </TableCell>
                 </TableRow>
               ))}
-              {products.length === 0 && (
+              {stock.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    No products available.
+                  <TableCell colSpan={4} align="center">
+                    No stock records available.
                   </TableCell>
                 </TableRow>
               )}
@@ -154,10 +169,10 @@ export default function Products() {
         </TableContainer>
 
         <Dialog open={open} onClose={handleClose}>
-          <DialogTitle>Delete Product</DialogTitle>
+          <DialogTitle>Delete Stock Record</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to delete this product? This action cannot be undone.
+              Are you sure you want to delete this stock record? This action cannot be undone.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
