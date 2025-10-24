@@ -1,5 +1,3 @@
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import {
   Container,
   Typography,
@@ -15,8 +13,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  AppBar,
-  Toolbar,
   Chip,
   Alert,
   Snackbar,
@@ -33,214 +29,72 @@ import {
   LinearProgress,
 } from '@mui/material';
 import {
-  Warning as WarningIcon,
   Add as AddIcon,
   Refresh as RefreshIcon,
-  CheckCircle as CheckCircleIcon,
-  Pending as PendingIcon,
-  Cancel as CancelIcon,
+  Warning as WarningIcon,
+  Inventory as InventoryIcon,
   TrendingDown as TrendingDownIcon,
   TrendingUp as TrendingUpIcon,
-  Inventory as InventoryIcon,
+  CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
-import { Product, Alert as AlertType, StockStatus } from '@/types';
+import { useProducts, useAlerts, useAlertOperations } from '@/hooks';
+import { LoadingSkeleton, ErrorDisplay } from '@/components';
+import { getAlertIcon, getAlertColor, getStatusIcon, getStatusColor } from '@/utils/alertUtils';
 
 export default function Alerts() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [alerts, setAlerts] = useState<AlertType[]>([]);
-  const [stockStatuses, setStockStatuses] = useState<StockStatus[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [selectedAlert, setSelectedAlert] = useState<AlertType | null>(null);
+  const { data: products = [], isLoading: productsLoading, isError: productsError, error: productsErrorData } = useProducts();
+  const { data: alerts = [], isLoading: alertsLoading, isError: alertsError, error: alertsErrorData } = useAlerts();
+  
+  const {
+    openDialog,
+    selectedAlert,
+    formData,
+    success,
+    handleGenerateAlerts,
+    handleAlertAction,
+    handleUpdateAlert,
+    handleCloseDialog,
+    handleFormChange,
+    clearSuccess,
+    isGenerating,
+    isUpdating,
+    generateError,
+    updateError,
+  } = useAlertOperations();
 
-  // Form state for alert management
-  const [alertForm, setAlertForm] = useState({
-    status: '',
-    acknowledgedBy: '',
-    notes: ''
-  });
+  const isLoading = productsLoading || alertsLoading;
+  const isError = productsError || alertsError;
+  const error = productsErrorData || alertsErrorData;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [productsRes, alertsRes, stockStatusRes] = await Promise.all([
-          fetch('/api/products'),
-          fetch('/api/alerts'),
-          fetch('/api/alerts?action=stock-status'),
-        ]);
+  if (isLoading) {
+    return (
+      <>
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <LoadingSkeleton />
+        </Container>
+      </>
+    );
+  }
 
-        if (!productsRes.ok || !alertsRes.ok || !stockStatusRes.ok) {
-          throw new Error('Failed to fetch data');
-        }
+  if (isError) {
+    return (
+      <>
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <ErrorDisplay error={error?.message || 'An error occurred'} />
+        </Container>
+      </>
+    );
+  }
 
-        const [productsData, alertsData, stockStatusData] = await Promise.all([
-          productsRes.json(),
-          alertsRes.json(),
-          stockStatusRes.json(),
-        ]);
-
-        setProducts(productsData);
-        setAlerts(alertsData);
-        setStockStatuses(stockStatusData);
-        setError(null);
-      } catch (err) {
-        setError('Failed to load alerts data. Please try again.');
-        console.error('Error fetching data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const handleGenerateAlerts = async () => {
-    try {
-      const response = await fetch('/api/alerts?action=generate', {
-        method: 'GET',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate alerts');
-      }
-
-      const newAlerts = await response.json();
-      setAlerts(newAlerts);
-      setSuccess('Alerts generated successfully!');
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate alerts');
-    }
-  };
-
-  const handleAlertAction = (alert: AlertType) => {
-    setSelectedAlert(alert);
-    setAlertForm({
-      status: alert.status,
-      acknowledgedBy: alert.acknowledgedBy || '',
-      notes: alert.notes || ''
-    });
-    setOpenDialog(true);
-  };
-
-  const handleUpdateAlert = async () => {
-    if (!selectedAlert) return;
-
-    try {
-      const response = await fetch('/api/alerts', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: selectedAlert.id,
-          ...alertForm,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update alert');
-      }
-
-      const updatedAlert = await response.json();
-      setAlerts(alerts.map(alert => alert.id === updatedAlert.id ? updatedAlert : alert));
-      setSuccess('Alert updated successfully!');
-      setOpenDialog(false);
-      setSelectedAlert(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update alert');
-    }
-  };
-
-  const getAlertIcon = (alertType: string) => {
-    switch (alertType) {
-      case 'critical':
-        return <WarningIcon color="error" />;
-      case 'low':
-        return <TrendingDownIcon color="warning" />;
-      case 'overstocked':
-        return <TrendingUpIcon color="info" />;
-      default:
-        return <WarningIcon />;
-    }
-  };
-
-  const getAlertColor = (alertType: string) => {
-    switch (alertType) {
-      case 'critical':
-        return 'error';
-      case 'low':
-        return 'warning';
-      case 'overstocked':
-        return 'info';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <PendingIcon color="warning" />;
-      case 'acknowledged':
-        return <CheckCircleIcon color="info" />;
-      case 'resolved':
-        return <CheckCircleIcon color="success" />;
-      default:
-        return <PendingIcon />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'warning';
-      case 'acknowledged':
-        return 'info';
-      case 'resolved':
-        return 'success';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStockStatusColor = (status: string) => {
-    switch (status) {
-      case 'critical':
-        return '#f44336';
-      case 'low':
-        return '#ff9800';
-      case 'adequate':
-        return '#4caf50';
-      case 'overstocked':
-        return '#2196f3';
-      default:
-        return '#9e9e9e';
-    }
-  };
 
   const activeAlerts = alerts.filter(alert => alert.status === 'active');
   const criticalAlerts = activeAlerts.filter(alert => alert.alertType === 'critical');
   const lowStockAlerts = activeAlerts.filter(alert => alert.alertType === 'low');
   const overstockedAlerts = activeAlerts.filter(alert => alert.alertType === 'overstocked');
 
-  if (loading) {
-    return (
-      <>
-        <Container sx={{ mt: 4, mb: 4 }}>
-          <Typography>Loading...</Typography>
-        </Container>
-      </>
-    );
-  }
-
   return (
     <>
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-        {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
           <Box>
             <Typography variant="h3" component="h1" gutterBottom sx={{ color: '#2E7D32', fontWeight: 'bold' }}>
@@ -254,16 +108,16 @@ export default function Alerts() {
             variant="contained"
             startIcon={<RefreshIcon />}
             onClick={handleGenerateAlerts}
+            disabled={isGenerating}
             sx={{
               bgcolor: '#2E7D32',
               '&:hover': { bgcolor: '#1B5E20' }
             }}
           >
-            Generate Alerts
+            {isGenerating ? 'Generating...' : 'Generate Alerts'}
           </Button>
         </Box>
 
-        {/* Alert Summary Cards */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6} md={3}>
             <Card sx={{ 
@@ -358,101 +212,7 @@ export default function Alerts() {
           </Grid>
         </Grid>
 
-        {/* Stock Status Overview */}
-        <Card sx={{ mb: 4 }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-              <InventoryIcon sx={{ mr: 1, color: '#2E7D32' }} />
-              <Typography variant="h5" sx={{ color: '#2E7D32', fontWeight: 'bold' }}>
-                Stock Status Overview
-              </Typography>
-            </Box>
-            
-            <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ bgcolor: alpha('#2E7D32', 0.1) }}>
-                    <TableCell><strong>Product</strong></TableCell>
-                    <TableCell><strong>Current Stock</strong></TableCell>
-                    <TableCell><strong>Reorder Point</strong></TableCell>
-                    <TableCell><strong>Status</strong></TableCell>
-                    <TableCell><strong>Stock Level</strong></TableCell>
-                    <TableCell align="right"><strong>Recommended Order</strong></TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {stockStatuses.map((status) => (
-                    <TableRow 
-                      key={status.productId}
-                      sx={{ 
-                        '&:hover': {
-                          backgroundColor: alpha('#2E7D32', 0.05)
-                        }
-                      }}
-                    >
-                      <TableCell>
-                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                          {status.productName}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {status.sku} • {status.category}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                          {status.totalStock.toLocaleString()}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body1">
-                          {status.reorderPoint.toLocaleString()}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip 
-                          label={status.status.toUpperCase()}
-                          size="small"
-                          sx={{ 
-                            bgcolor: getStockStatusColor(status.status),
-                            color: 'white',
-                            fontWeight: 'bold'
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <LinearProgress 
-                            variant="determinate" 
-                            value={Math.min(status.stockPercentage, 100)} 
-                            sx={{ 
-                              width: 100, 
-                              height: 8, 
-                              borderRadius: 4,
-                              bgcolor: alpha(getStockStatusColor(status.status), 0.2),
-                              '& .MuiLinearProgress-bar': {
-                                bgcolor: getStockStatusColor(status.status)
-                              }
-                            }}
-                          />
-                          <Typography variant="body2" sx={{ minWidth: 40 }}>
-                            {status.stockPercentage.toFixed(0)}%
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                          {status.recommendedOrder > 0 ? status.recommendedOrder.toLocaleString() : '-'}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </CardContent>
-        </Card>
 
-        {/* Active Alerts */}
         <Card>
           <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -558,11 +318,17 @@ export default function Alerts() {
           </CardContent>
         </Card>
 
-        {/* Alert Management Dialog */}
-        <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
+        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
           <DialogTitle sx={{ color: '#2E7D32', fontWeight: 'bold' }}>
             Manage Alert
           </DialogTitle>
+          
+          {updateError && (
+            <Alert severity="error" sx={{ mx: 3, mb: 2 }}>
+              {updateError?.message || 'An error occurred while updating the alert'}
+            </Alert>
+          )}
+          
           <DialogContent>
             {selectedAlert && (
               <Grid container spacing={3} sx={{ mt: 1 }}>
@@ -579,8 +345,8 @@ export default function Alerts() {
                   <FormControl fullWidth>
                     <InputLabel>Status</InputLabel>
                     <Select
-                      value={alertForm.status}
-                      onChange={(e) => setAlertForm({...alertForm, status: e.target.value})}
+                      value={formData.status}
+                      onChange={handleFormChange('status')}
                       label="Status"
                     >
                       <MenuItem value="active">Active</MenuItem>
@@ -594,8 +360,8 @@ export default function Alerts() {
                   <TextField
                     fullWidth
                     label="Acknowledged By"
-                    value={alertForm.acknowledgedBy}
-                    onChange={(e) => setAlertForm({...alertForm, acknowledgedBy: e.target.value})}
+                    value={formData.acknowledgedBy}
+                    onChange={handleFormChange('acknowledgedBy')}
                   />
                 </Grid>
 
@@ -605,47 +371,49 @@ export default function Alerts() {
                     label="Notes"
                     multiline
                     rows={3}
-                    value={alertForm.notes}
-                    onChange={(e) => setAlertForm({...alertForm, notes: e.target.value})}
+                    value={formData.notes}
+                    onChange={handleFormChange('notes')}
                   />
                 </Grid>
               </Grid>
             )}
           </DialogContent>
           <DialogActions sx={{ p: 3 }}>
-            <Button onClick={() => setOpenDialog(false)}>
+            <Button onClick={handleCloseDialog}>
               Cancel
             </Button>
             <Button 
               onClick={handleUpdateAlert}
               variant="contained"
+              disabled={isUpdating}
               sx={{
                 bgcolor: '#2E7D32',
                 '&:hover': { bgcolor: '#1B5E20' }
               }}
             >
-              Update Alert
+              {isUpdating ? 'Updating...' : 'Update Alert'}
             </Button>
           </DialogActions>
         </Dialog>
 
-        {/* Snackbars */}
-        <Snackbar
-          open={!!error}
-          autoHideDuration={6000}
-          onClose={() => setError(null)}
-        >
-          <Alert onClose={() => setError(null)} severity="error">
-            {error}
-          </Alert>
-        </Snackbar>
+        {generateError && (
+          <Snackbar
+            open={!!generateError}
+            autoHideDuration={6000}
+            onClose={() => {}}
+          >
+            <Alert severity="error">
+              {generateError?.message || 'Failed to generate alerts'}
+            </Alert>
+          </Snackbar>
+        )}
 
         <Snackbar
           open={!!success}
           autoHideDuration={6000}
-          onClose={() => setSuccess(null)}
+          onClose={clearSuccess}
         >
-          <Alert onClose={() => setSuccess(null)} severity="success">
+          <Alert onClose={clearSuccess} severity="success">
             {success}
           </Alert>
         </Snackbar>
