@@ -3,6 +3,7 @@ export const QUERY_KEYS = {
   WAREHOUSES: ['warehouses'] as const,
   STOCK: ['stock'] as const,
   ALERTS: ['alerts'] as const,
+  TRANSFERS: ['transfers'] as const,
 } as const;
 
 export const createQueryKey = {

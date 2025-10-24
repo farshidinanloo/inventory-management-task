@@ -1,5 +1,3 @@
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import {
   Container,
   Typography,
@@ -20,8 +18,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  AppBar,
-  Toolbar,
   Chip,
   Alert,
   Snackbar,
@@ -32,147 +28,51 @@ import {
   alpha,
 } from '@mui/material';
 import {
-  TransferWithinAStation as TransferIcon,
   Add as AddIcon,
   History as HistoryIcon,
-  CheckCircle as CheckCircleIcon,
-  Pending as PendingIcon,
-  Cancel as CancelIcon,
 } from '@mui/icons-material';
-import { Product, Warehouse, Transfer } from '@/types';
+import { AppBar } from '@/components';
+import { useProducts, useWarehouses, useTransfers, useTransferForm } from '@/hooks';
+import { LoadingSkeleton, ErrorDisplay } from '@/components';
+import { getStatusIcon, getStatusColor } from '@/utils/transferUtils';
 
 export default function Transfers() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [transfers, setTransfers] = useState<Transfer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [openDialog, setOpenDialog] = useState(false);
+  const { data: products = [], isLoading: productsLoading, isError: productsError, error: productsErrorData } = useProducts();
+  const { data: warehouses = [], isLoading: warehousesLoading, isError: warehousesError, error: warehousesErrorData } = useWarehouses();
+  const { data: transfers = [], isLoading: transfersLoading, isError: transfersError, error: transfersErrorData } = useTransfers();
+  
+  const {
+    formData,
+    handleInputChange,
+    handleSubmit,
+    openDialog,
+    openCreateDialog,
+    closeCreateDialog,
+    success,
+    clearSuccess,
+    isCreating,
+    createError,
+  } = useTransferForm();
 
-  // Form state
-  const [formData, setFormData] = useState({
-    productId: '',
-    fromWarehouseId: '',
-    toWarehouseId: '',
-    quantity: '',
-    requestedBy: '',
-    notes: ''
-  });
+  const isLoading = productsLoading || warehousesLoading || transfersLoading;
+  const isError = productsError || warehousesError || transfersError;
+  const error = productsErrorData || warehousesErrorData || transfersErrorData;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [productsRes, warehousesRes, transfersRes] = await Promise.all([
-          fetch('/api/products'),
-          fetch('/api/warehouses'),
-          fetch('/api/transfers'),
-        ]);
-
-        if (!productsRes.ok || !warehousesRes.ok || !transfersRes.ok) {
-          throw new Error('Failed to fetch data');
-        }
-
-        const [productsData, warehousesData, transfersData] = await Promise.all([
-          productsRes.json(),
-          warehousesRes.json(),
-          transfersRes.json(),
-        ]);
-
-        setProducts(productsData);
-        setWarehouses(warehousesData);
-        setTransfers(transfersData);
-        setError(null);
-      } catch (err) {
-        setError('Failed to load transfers data. Please try again.');
-        console.error('Error fetching data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const handleInputChange = (field: string) => (event: any) => {
-    setFormData({
-      ...formData,
-      [field]: event.target.value
-    });
-  };
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    
-    try {
-      const response = await fetch('/api/transfers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          productId: parseInt(formData.productId),
-          fromWarehouseId: parseInt(formData.fromWarehouseId),
-          toWarehouseId: parseInt(formData.toWarehouseId),
-          quantity: parseInt(formData.quantity),
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create transfer');
-      }
-
-      const newTransfer = await response.json();
-      setTransfers([newTransfer, ...transfers]);
-      setSuccess('Transfer created successfully!');
-      setFormData({
-        productId: '',
-        fromWarehouseId: '',
-        toWarehouseId: '',
-        quantity: '',
-        requestedBy: '',
-        notes: ''
-      });
-      setOpenDialog(false);
-    } catch (err: any) {
-      setError(err.message || 'Failed to create transfer');
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircleIcon color="success" />;
-      case 'pending':
-        return <PendingIcon color="warning" />;
-      case 'cancelled':
-        return <CancelIcon color="error" />;
-      default:
-        return <PendingIcon />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'success';
-      case 'pending':
-        return 'warning';
-      case 'cancelled':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
       <>
         <Container sx={{ mt: 4, mb: 4 }}>
-          <Typography>Loading...</Typography>
+          <LoadingSkeleton />
+        </Container>
+      </>
+    );
+  }
+
+  if (isError) {
+    return (
+      <>
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <ErrorDisplay error={error?.message || 'An error occurred'} />
         </Container>
       </>
     );
@@ -180,9 +80,7 @@ export default function Transfers() {
 
   return (
     <>
-
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-        {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
           <Box>
             <Typography variant="h3" component="h1" gutterBottom sx={{ color: '#2E7D32', fontWeight: 'bold' }}>
@@ -195,7 +93,7 @@ export default function Transfers() {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => setOpenDialog(true)}
+            onClick={openCreateDialog}
             sx={{
               bgcolor: '#2E7D32',
               '&:hover': { bgcolor: '#1B5E20' }
@@ -205,7 +103,6 @@ export default function Transfers() {
           </Button>
         </Box>
 
-        {/* Transfer History */}
         <Card>
           <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -309,11 +206,17 @@ export default function Transfers() {
           </CardContent>
         </Card>
 
-        {/* Transfer Form Dialog */}
-        <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
+        <Dialog open={openDialog} onClose={closeCreateDialog} maxWidth="md" fullWidth>
           <DialogTitle sx={{ color: '#2E7D32', fontWeight: 'bold' }}>
             Create New Transfer
           </DialogTitle>
+          
+          {createError && (
+            <Alert severity="error" sx={{ mx: 3, mb: 2 }}>
+              {createError?.message || 'An error occurred while creating the transfer'}
+            </Alert>
+          )}
+          
           <form onSubmit={handleSubmit}>
             <DialogContent>
               <Grid container spacing={3} sx={{ mt: 1 }}>
@@ -403,40 +306,30 @@ export default function Transfers() {
               </Grid>
             </DialogContent>
             <DialogActions sx={{ p: 3 }}>
-              <Button onClick={() => setOpenDialog(false)}>
+              <Button onClick={closeCreateDialog}>
                 Cancel
               </Button>
               <Button 
                 type="submit" 
                 variant="contained"
+                disabled={isCreating}
                 sx={{
                   bgcolor: '#2E7D32',
                   '&:hover': { bgcolor: '#1B5E20' }
                 }}
               >
-                Create Transfer
+                {isCreating ? 'Creating...' : 'Create Transfer'}
               </Button>
             </DialogActions>
           </form>
         </Dialog>
 
-        {/* Snackbars */}
-        <Snackbar
-          open={!!error}
-          autoHideDuration={6000}
-          onClose={() => setError(null)}
-        >
-          <Alert onClose={() => setError(null)} severity="error">
-            {error}
-          </Alert>
-        </Snackbar>
-
         <Snackbar
           open={!!success}
           autoHideDuration={6000}
-          onClose={() => setSuccess(null)}
+          onClose={clearSuccess}
         >
-          <Alert onClose={() => setSuccess(null)} severity="success">
+          <Alert onClose={clearSuccess} severity="success">
             {success}
           </Alert>
         </Snackbar>

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Product, Warehouse, Stock, Alert } from '@/types';
+import { Product, Warehouse, Stock, Alert, Transfer } from '@/types';
 import { QUERY_KEYS } from '@/constants/queryKeys';
 
 const fetchProducts = async (): Promise<Product[]> => {
@@ -34,6 +34,14 @@ const fetchAlerts = async (): Promise<Alert[]> => {
   return response.json();
 };
 
+const fetchTransfers = async (): Promise<Transfer[]> => {
+  const response = await fetch('/api/transfers');
+  if (!response.ok) {
+    throw new Error('Failed to fetch transfers');
+  }
+  return response.json();
+};
+
 export const useProducts = () => {
   return useQuery({
     queryKey: QUERY_KEYS.PRODUCTS,
@@ -59,6 +67,13 @@ export const useAlerts = () => {
   return useQuery({
     queryKey: QUERY_KEYS.ALERTS,
     queryFn: fetchAlerts,
+  });
+};
+
+export const useTransfers = () => {
+  return useQuery({
+    queryKey: QUERY_KEYS.TRANSFERS,
+    queryFn: fetchTransfers,
   });
 };
 
