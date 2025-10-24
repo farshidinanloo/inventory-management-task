@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Container,
@@ -17,54 +16,36 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  AppBar,
-  Toolbar,
   Box,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import { Product } from '@/types';
+import { useProducts, useProductOperations } from '@/hooks';
+import { LoadingSkeleton, ErrorDisplay } from '@/components';
 
 export default function Products() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [open, setOpen] = useState<boolean>(false);
-  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const { data: products = [], isLoading, isError, error } = useProducts();
+  const { open, handleClickOpen, handleClose, handleDelete, isDeleting } = useProductOperations();
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  if (isLoading) {
+    return (
+      <>
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <LoadingSkeleton />
+        </Container>
+      </>
+    );
+  }
 
-  const fetchProducts = () => {
-    fetch('/api/products')
-      .then((res) => res.json())
-      .then((data) => setProducts(data));
-  };
-
-  const handleClickOpen = (id: number) => {
-    setSelectedProductId(id);
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-    setSelectedProductId(null);
-  };
-
-  const handleDelete = async () => {
-    try {
-      const res = await fetch(`/api/products/${selectedProductId}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        setProducts(products.filter((product) => product.id !== selectedProductId));
-        handleClose();
-      }
-    } catch (error) {
-      console.error('Error deleting product:', error);
-    }
-  };
+  if (isError) {
+    return (
+      <>
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <ErrorDisplay error={error?.message || 'An error occurred'} />
+        </Container>
+      </>
+    );
+  }
 
   return (
     <>
@@ -144,8 +125,13 @@ export default function Products() {
             <Button onClick={handleClose} color="primary">
               Cancel
             </Button>
-            <Button onClick={handleDelete} color="error" autoFocus>
-              Delete
+            <Button 
+              onClick={handleDelete} 
+              color="error" 
+              autoFocus
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogActions>
         </Dialog>

@@ -1,6 +1,5 @@
-import {useState, useEffect} from 'react';
-import {useRouter} from 'next/router';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import {
 	Container,
 	Typography,
@@ -8,69 +7,43 @@ import {
 	Button,
 	Box,
 	Paper,
-	AppBar,
-	Toolbar,
-	CircularProgress,
+	Alert,
 } from '@mui/material';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import { Product } from '@/types';
+import { useProductEdit } from '@/hooks';
+import { LoadingSkeleton, ErrorDisplay } from '@/components';
 
 export default function EditProduct() {
-	const [product, setProduct] = useState({
-		sku: '',
-		name: '',
-		category: '',
-		unitCost: '',
-		reorderPoint: '',
-	});
-	const [loading, setLoading] = useState<boolean>(true);
-
 	const router = useRouter();
-	const {id} = router.query;
+	const { id } = router.query;
+	
+	const { 
+		formData, 
+		handleChange, 
+		handleSubmit, 
+		isLoading, 
+		isError, 
+		fetchError, 
+		isUpdating, 
+		updateError 
+	} = useProductEdit(id as string);
 
-	useEffect(() => {
-		if (id) {
-			fetch(`/api/products/${id}`)
-				.then((res) => res.json())
-				.then((data) => {
-					setProduct(data);
-					setLoading(false);
-				});
-		}
-	}, [id]);
-
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setProduct({...product, [e.target.name]: e.target.value});
-	};
-
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		const res = await fetch(`/api/products/${id}`, {
-			method: 'PUT',
-			headers: {'Content-Type': 'application/json'},
-			body: JSON.stringify({
-				...product,
-				unitCost: parseFloat(product.unitCost),
-				reorderPoint: parseInt(product.reorderPoint),
-			}),
-		});
-		if (res.ok) {
-			router.push('/products');
-		}
-	};
-
-	if (loading) {
+	if (isLoading) {
 		return (
-			<Box
-				sx={{
-					display: 'flex',
-					justifyContent: 'center',
-					alignItems: 'center',
-					minHeight: '100vh',
-				}}
-			>
-				<CircularProgress />
-			</Box>
+			<>
+				<Container sx={{ mt: 4, mb: 4 }}>
+					<LoadingSkeleton />
+				</Container>
+			</>
+		);
+	}
+
+	if (isError) {
+		return (
+			<>
+				<Container sx={{ mt: 4, mb: 4 }}>
+					<ErrorDisplay error={fetchError?.message || 'An error occurred'} />
+				</Container>
+			</>
 		);
 	}
 
@@ -81,6 +54,13 @@ export default function EditProduct() {
 					<Typography variant='h4' component='h1' gutterBottom>
 						Edit Product
 					</Typography>
+					
+					{updateError && (
+						<Alert severity="error" sx={{ mb: 2 }}>
+							{updateError?.message || 'An error occurred while updating the product'}
+						</Alert>
+					)}
+					
 					<Box component='form' onSubmit={handleSubmit} noValidate sx={{mt: 2}}>
 						<TextField
 							margin='normal'
@@ -88,7 +68,7 @@ export default function EditProduct() {
 							fullWidth
 							label='SKU'
 							name='sku'
-							value={product.sku}
+							value={formData.sku}
 							onChange={handleChange}
 						/>
 						<TextField
@@ -97,7 +77,7 @@ export default function EditProduct() {
 							fullWidth
 							label='Product Name'
 							name='name'
-							value={product.name}
+							value={formData.name}
 							onChange={handleChange}
 						/>
 						<TextField
@@ -106,7 +86,7 @@ export default function EditProduct() {
 							fullWidth
 							label='Category'
 							name='category'
-							value={product.category}
+							value={formData.category}
 							onChange={handleChange}
 						/>
 						<TextField
@@ -117,7 +97,7 @@ export default function EditProduct() {
 							name='unitCost'
 							type='number'
 							inputProps={{step: '0.01', min: '0'}}
-							value={product.unitCost}
+							value={formData.unitCost}
 							onChange={handleChange}
 						/>
 						<TextField
@@ -128,7 +108,7 @@ export default function EditProduct() {
 							name='reorderPoint'
 							type='number'
 							inputProps={{min: '0'}}
-							value={product.reorderPoint}
+							value={formData.reorderPoint}
 							onChange={handleChange}
 						/>
 						<Box sx={{mt: 3, display: 'flex', gap: 2}}>
@@ -137,8 +117,9 @@ export default function EditProduct() {
 								fullWidth
 								variant='contained'
 								color='primary'
+								disabled={isUpdating}
 							>
-								Update Product
+								{isUpdating ? 'Updating...' : 'Update Product'}
 							</Button>
 							<Button
 								fullWidth

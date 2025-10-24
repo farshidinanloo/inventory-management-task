@@ -1,5 +1,3 @@
-import { useState } from 'react';
-import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
   Container,
@@ -8,42 +6,12 @@ import {
   Button,
   Box,
   Paper,
-  AppBar,
-  Toolbar,
+  Alert,
 } from '@mui/material';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import { Product } from '@/types';
+import { useProductForm } from '@/hooks';
 
 export default function AddProduct() {
-  const [product, setProduct] = useState({
-    sku: '',
-    name: '',
-    category: '',
-    unitCost: '',
-    reorderPoint: '',
-  });
-
-  const router = useRouter();
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setProduct({ ...product, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const res = await fetch('/api/products', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...product,
-        unitCost: parseFloat(product.unitCost),
-        reorderPoint: parseInt(product.reorderPoint),
-      }),
-    });
-    if (res.ok) {
-      router.push('/products');
-    }
-  };
+  const { formData, handleChange, handleSubmit, isCreating, error } = useProductForm();
 
   return (
     <>
@@ -52,6 +20,13 @@ export default function AddProduct() {
           <Typography variant="h4" component="h1" gutterBottom>
             Add New Product
           </Typography>
+          
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error?.message || 'An error occurred while creating the product'}
+            </Alert>
+          )}
+          
           <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
             <TextField
               margin="normal"
@@ -59,7 +34,7 @@ export default function AddProduct() {
               fullWidth
               label="SKU"
               name="sku"
-              value={product.sku}
+              value={formData.sku}
               onChange={handleChange}
             />
             <TextField
@@ -68,7 +43,7 @@ export default function AddProduct() {
               fullWidth
               label="Product Name"
               name="name"
-              value={product.name}
+              value={formData.name}
               onChange={handleChange}
             />
             <TextField
@@ -77,7 +52,7 @@ export default function AddProduct() {
               fullWidth
               label="Category"
               name="category"
-              value={product.category}
+              value={formData.category}
               onChange={handleChange}
             />
             <TextField
@@ -88,7 +63,7 @@ export default function AddProduct() {
               name="unitCost"
               type="number"
               inputProps={{ step: '0.01', min: '0' }}
-              value={product.unitCost}
+              value={formData.unitCost}
               onChange={handleChange}
             />
             <TextField
@@ -99,7 +74,7 @@ export default function AddProduct() {
               name="reorderPoint"
               type="number"
               inputProps={{ min: '0' }}
-              value={product.reorderPoint}
+              value={formData.reorderPoint}
               onChange={handleChange}
             />
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
@@ -108,8 +83,9 @@ export default function AddProduct() {
                 fullWidth
                 variant="contained"
                 color="primary"
+                disabled={isCreating}
               >
-                Add Product
+                {isCreating ? 'Adding...' : 'Add Product'}
               </Button>
               <Button
                 fullWidth

@@ -7,3 +7,6 @@ export { useTransfers as useTransferForm } from './useTransfers';
 export { useStockOperations } from './useStockOperations';
 export { useStockForm } from './useStockForm';
 export { useStockEdit } from './useStockEdit';
+export { useProductOperations } from './useProductOperations';
+export { useProductForm } from './useProductForm';
+export { useProductEdit } from './useProductEdit';
