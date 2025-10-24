@@ -171,26 +171,6 @@ export default function Transfers() {
   if (loading) {
     return (
       <>
-        <AppBar position="static">
-          <Toolbar>
-            <TransferIcon sx={{ mr: 2 }} />
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              Stock Transfers
-            </Typography>
-            <Button color="inherit" component={Link} href="/">
-              Dashboard
-            </Button>
-            <Button color="inherit" component={Link} href="/products">
-              Products
-            </Button>
-            <Button color="inherit" component={Link} href="/warehouses">
-              Warehouses
-            </Button>
-            <Button color="inherit" component={Link} href="/stock">
-              Stock Levels
-            </Button>
-          </Toolbar>
-        </AppBar>
         <Container sx={{ mt: 4, mb: 4 }}>
           <Typography>Loading...</Typography>
         </Container>
@@ -200,26 +180,6 @@ export default function Transfers() {
 
   return (
     <>
-      <AppBar position="static">
-        <Toolbar>
-          <TransferIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Stock Transfers
-          </Typography>
-          <Button color="inherit" component={Link} href="/">
-            Dashboard
-          </Button>
-          <Button color="inherit" component={Link} href="/products">
-            Products
-          </Button>
-          <Button color="inherit" component={Link} href="/warehouses">
-            Warehouses
-          </Button>
-          <Button color="inherit" component={Link} href="/stock">
-            Stock Levels
-          </Button>
-        </Toolbar>
-      </AppBar>
 
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         {/* Header */}

@@ -1,5 +1,3 @@
-import { useState } from 'react';
-import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
   Container,
@@ -8,65 +6,29 @@ import {
   Button,
   Box,
   Paper,
-  AppBar,
-  Toolbar,
+  Alert,
 } from '@mui/material';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import { Warehouse } from '@/types';
+import { AppBar } from '@/components';
+import { useWarehouseForm } from '@/hooks';
 
 export default function AddWarehouse() {
-  const [warehouse, setWarehouse] = useState({
-    name: '',
-    location: '',
-    code: '',
-  });
-
-  const router = useRouter();
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setWarehouse({ ...warehouse, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const res = await fetch('/api/warehouses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(warehouse),
-    });
-    if (res.ok) {
-      router.push('/warehouses');
-    }
-  };
+  const { formData, handleChange, handleSubmit, isCreating, error } = useWarehouseForm();
 
   return (
     <>
-        <AppBar position="static">
-        <Toolbar>
-          <InventoryIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Inventory Management System
-          </Typography>
-          <Button color="inherit" component={Link} href="/">
-            Dashboard
-          </Button>
-          <Button color="inherit" component={Link} href="/products">
-            Products
-          </Button>
-          <Button color="inherit" component={Link} href="/warehouses">
-            Warehouses
-          </Button>
-          <Button color="inherit" component={Link} href="/stock">
-            Stock Levels
-          </Button>
-        </Toolbar>
-      </AppBar>
 
       <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>
             Add New Warehouse
           </Typography>
+          
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error?.message || 'An error occurred while creating the warehouse'}
+            </Alert>
+          )}
+          
           <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
             <TextField
               margin="normal"
@@ -74,7 +36,7 @@ export default function AddWarehouse() {
               fullWidth
               label="Warehouse Code"
               name="code"
-              value={warehouse.code}
+              value={formData.code}
               onChange={handleChange}
             />
             <TextField
@@ -83,7 +45,7 @@ export default function AddWarehouse() {
               fullWidth
               label="Warehouse Name"
               name="name"
-              value={warehouse.name}
+              value={formData.name}
               onChange={handleChange}
             />
             <TextField
@@ -92,7 +54,7 @@ export default function AddWarehouse() {
               fullWidth
               label="Location"
               name="location"
-              value={warehouse.location}
+              value={formData.location}
               onChange={handleChange}
             />
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
@@ -101,8 +63,9 @@ export default function AddWarehouse() {
                 fullWidth
                 variant="contained"
                 color="primary"
+                disabled={isCreating}
               >
-                Add Warehouse
+                {isCreating ? 'Creating...' : 'Add Warehouse'}
               </Button>
               <Button
                 fullWidth

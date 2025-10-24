@@ -1,4 +1,4 @@
-export { default as AppBar } from './AppBar';
+export { AppBar } from './AppBar';
 export { default as LoadingSkeleton } from './LoadingSkeleton';
 export { default as ErrorDisplay } from './ErrorDisplay';
 export { default as MetricsCards } from './MetricsCards';

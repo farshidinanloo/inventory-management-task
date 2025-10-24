@@ -2,7 +2,7 @@ import {
   Container,
   Alert,
 } from '@mui/material';
-import AppBar from './AppBar';
+import {AppBar} from './AppBar';
 
 interface ErrorDisplayProps {
   error: string;
@@ -11,7 +11,6 @@ interface ErrorDisplayProps {
 export default function ErrorDisplay({ error }: ErrorDisplayProps) {
   return (
     <>
-      <AppBar />
       <Container sx={{ mt: 4, mb: 4 }}>
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}

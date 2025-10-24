@@ -230,29 +230,6 @@ export default function Alerts() {
   if (loading) {
     return (
       <>
-        <AppBar position="static">
-          <Toolbar>
-            <WarningIcon sx={{ mr: 2 }} />
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              Stock Alerts
-            </Typography>
-            <Button color="inherit" component={Link} href="/">
-              Dashboard
-            </Button>
-            <Button color="inherit" component={Link} href="/products">
-              Products
-            </Button>
-            <Button color="inherit" component={Link} href="/warehouses">
-              Warehouses
-            </Button>
-            <Button color="inherit" component={Link} href="/stock">
-              Stock Levels
-            </Button>
-            <Button color="inherit" component={Link} href="/transfers">
-              Transfers
-            </Button>
-          </Toolbar>
-        </AppBar>
         <Container sx={{ mt: 4, mb: 4 }}>
           <Typography>Loading...</Typography>
         </Container>
@@ -262,30 +239,6 @@ export default function Alerts() {
 
   return (
     <>
-      <AppBar position="static">
-        <Toolbar>
-          <WarningIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Stock Alerts
-          </Typography>
-          <Button color="inherit" component={Link} href="/">
-            Dashboard
-          </Button>
-          <Button color="inherit" component={Link} href="/products">
-            Products
-          </Button>
-          <Button color="inherit" component={Link} href="/warehouses">
-            Warehouses
-          </Button>
-          <Button color="inherit" component={Link} href="/stock">
-            Stock Levels
-          </Button>
-          <Button color="inherit" component={Link} href="/transfers">
-            Transfers
-          </Button>
-        </Toolbar>
-      </AppBar>
-
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>

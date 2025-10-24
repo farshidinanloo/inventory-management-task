@@ -5,16 +5,19 @@ import {
   Typography,
   Button,
 } from '@mui/material';
-import NatureIcon from '@mui/icons-material/Nature';
+import InventoryIcon from '@mui/icons-material/Inventory';
 
-export default function AppBar() {
+export const AppBar = () => {
   return (
     <MuiAppBar position="static">
       <Toolbar>
-        <NatureIcon sx={{ mr: 2 }} />
+        <InventoryIcon sx={{ mr: 2 }} />
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          GreenSupply Co - Inventory Management
+          Inventory Management System
         </Typography>
+        <Button color="inherit" component={Link} href="/">
+          Dashboard
+        </Button>
         <Button color="inherit" component={Link} href="/products">
           Products
         </Button>
@@ -24,13 +27,7 @@ export default function AppBar() {
         <Button color="inherit" component={Link} href="/stock">
           Stock Levels
         </Button>
-        <Button color="inherit" component={Link} href="/transfers">
-          Transfers
-        </Button>
-        <Button color="inherit" component={Link} href="/alerts">
-          Alerts
-        </Button>
       </Toolbar>
     </MuiAppBar>
   );
-}
+};

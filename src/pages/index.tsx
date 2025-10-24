@@ -31,7 +31,6 @@ export default function Home() {
 
   return (
     <>
-      <AppBar />
       <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
         <Box sx={{ mb: 4 }}>
           <Typography variant="h3" component="h1" gutterBottom sx={{ color: '#2E7D32', fontWeight: 'bold' }}>

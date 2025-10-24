@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Container,
@@ -17,78 +16,40 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  AppBar,
-  Toolbar,
   Box,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import { Warehouse } from '@/types';
+import { AppBar } from '@/components';
+import { useWarehouses, useWarehouseOperations } from '@/hooks';
+import { LoadingSkeleton, ErrorDisplay } from '@/components';
 
 export default function Warehouses() {
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [open, setOpen] = useState<boolean>(false);
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | null>(null);
+  const { data: warehouses = [], isLoading, isError, error } = useWarehouses();
+  const { open, handleClickOpen, handleClose, handleDelete, isDeleting } = useWarehouseOperations();
 
-  useEffect(() => {
-    fetchWarehouses();
-  }, []);
+  if (isLoading) {
+    return (
+      <>
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <LoadingSkeleton />
+        </Container>
+      </>
+    );
+  }
 
-  const fetchWarehouses = () => {
-    fetch('/api/warehouses')
-      .then((res) => res.json())
-      .then((data) => setWarehouses(data));
-  };
-
-  const handleClickOpen = (id: number) => {
-    setSelectedWarehouseId(id);
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-    setSelectedWarehouseId(null);
-  };
-
-  const handleDelete = async () => {
-    try {
-      const res = await fetch(`/api/warehouses/${selectedWarehouseId}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        setWarehouses(warehouses.filter((warehouse) => warehouse.id !== selectedWarehouseId));
-        handleClose();
-      }
-    } catch (error) {
-      console.error('Error deleting warehouse:', error);
-    }
-  };
+  if (isError) {
+    return (
+      <>
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <ErrorDisplay error={error?.message || 'An error occurred'} />
+        </Container>
+      </>
+    );
+  }
 
   return (
     <>
-        <AppBar position="static">
-        <Toolbar>
-          <InventoryIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Inventory Management System
-          </Typography>
-          <Button color="inherit" component={Link} href="/">
-            Dashboard
-          </Button>
-          <Button color="inherit" component={Link} href="/products">
-            Products
-          </Button>
-          <Button color="inherit" component={Link} href="/warehouses">
-            Warehouses
-          </Button>
-          <Button color="inherit" component={Link} href="/stock">
-            Stock Levels
-          </Button>
-        </Toolbar>
-      </AppBar>
-
       <Container sx={{ mt: 4, mb: 4 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4" component="h1">
@@ -161,8 +122,13 @@ export default function Warehouses() {
             <Button onClick={handleClose} color="primary">
               Cancel
             </Button>
-            <Button onClick={handleDelete} color="error" autoFocus>
-              Delete
+            <Button 
+              onClick={handleDelete} 
+              color="error" 
+              autoFocus
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogActions>
         </Dialog>

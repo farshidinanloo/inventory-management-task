@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import {
   Container,
   Typography,
@@ -8,87 +7,64 @@ import {
   Button,
   Box,
   Paper,
-  AppBar,
-  Toolbar,
+  Alert,
   CircularProgress,
 } from '@mui/material';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import { Warehouse } from '@/types';
+import { AppBar } from '@/components';
+import { useWarehouseEdit } from '@/hooks';
+import { LoadingSkeleton, ErrorDisplay } from '@/components';
 
 export default function EditWarehouse() {
-  const [warehouse, setWarehouse] = useState({
-    name: '',
-    location: '',
-    code: '',
-  });
-  const [loading, setLoading] = useState<boolean>(true);
-
   const router = useRouter();
   const { id } = router.query;
+  
+  const { 
+    formData, 
+    handleChange, 
+    handleSubmit, 
+    isLoading, 
+    isError, 
+    fetchError, 
+    isUpdating, 
+    updateError 
+  } = useWarehouseEdit(id as string);
 
-  useEffect(() => {
-    if (id) {
-      fetch(`/api/warehouses/${id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setWarehouse(data);
-          setLoading(false);
-        });
-    }
-  }, [id]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setWarehouse({ ...warehouse, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const res = await fetch(`/api/warehouses/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(warehouse),
-    });
-    if (res.ok) {
-      router.push('/warehouses');
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress />
-      </Box>
+      <>
+        <AppBar />
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <LoadingSkeleton />
+        </Container>
+      </>
+    );
+  }
+
+  if (isError) {
+    return (
+      <>
+        <AppBar />
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <ErrorDisplay error={fetchError?.message || 'An error occurred'} />
+        </Container>
+      </>
     );
   }
 
   return (
     <>
-        <AppBar position="static">
-        <Toolbar>
-          <InventoryIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Inventory Management System
-          </Typography>
-          <Button color="inherit" component={Link} href="/">
-            Dashboard
-          </Button>
-          <Button color="inherit" component={Link} href="/products">
-            Products
-          </Button>
-          <Button color="inherit" component={Link} href="/warehouses">
-            Warehouses
-          </Button>
-          <Button color="inherit" component={Link} href="/stock">
-            Stock Levels
-          </Button>
-        </Toolbar>
-      </AppBar>
-
       <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>
             Edit Warehouse
           </Typography>
+          
+          {updateError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {updateError?.message || 'An error occurred while updating the warehouse'}
+            </Alert>
+          )}
+          
           <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
             <TextField
               margin="normal"
@@ -96,7 +72,7 @@ export default function EditWarehouse() {
               fullWidth
               label="Warehouse Code"
               name="code"
-              value={warehouse.code}
+              value={formData.code}
               onChange={handleChange}
             />
             <TextField
@@ -105,7 +81,7 @@ export default function EditWarehouse() {
               fullWidth
               label="Warehouse Name"
               name="name"
-              value={warehouse.name}
+              value={formData.name}
               onChange={handleChange}
             />
             <TextField
@@ -114,7 +90,7 @@ export default function EditWarehouse() {
               fullWidth
               label="Location"
               name="location"
-              value={warehouse.location}
+              value={formData.location}
               onChange={handleChange}
             />
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
@@ -123,8 +99,9 @@ export default function EditWarehouse() {
                 fullWidth
                 variant="contained"
                 color="primary"
+                disabled={isUpdating}
               >
-                Update Warehouse
+                {isUpdating ? 'Updating...' : 'Update Warehouse'}
               </Button>
               <Button
                 fullWidth
