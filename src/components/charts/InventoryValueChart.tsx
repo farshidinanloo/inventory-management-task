@@ -5,6 +5,7 @@ import {
   Typography,
 } from '@mui/material';
 
+// Dynamic imports for charts to avoid SSR issues
 const BarChart = dynamic(() => import('recharts').then(mod => mod.BarChart), { ssr: false });
 const Bar = dynamic(() => import('recharts').then(mod => mod.Bar), { ssr: false });
 const XAxis = dynamic(() => import('recharts').then(mod => mod.XAxis), { ssr: false });
@@ -27,8 +28,8 @@ export default function InventoryValueChart({ data }: InventoryValueChartProps) 
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={data} layout="horizontal">
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis type="number" />
-            <YAxis dataKey="name" type="category" width={100} />
+            <XAxis dataKey="name"  />
+            <YAxis />
             <Tooltip formatter={(value: any) => [`$${value.toLocaleString()}`, 'Value']} />
             <Bar dataKey="value" fill="#66BB6A" />
           </BarChart>
