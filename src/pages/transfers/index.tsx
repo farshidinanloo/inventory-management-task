@@ -171,7 +171,7 @@ export default function Transfers() {
   if (loading) {
     return (
       <>
-        <AppBar position="static" sx={{ bgcolor: '#2E7D32' }}>
+        <AppBar position="static">
           <Toolbar>
             <TransferIcon sx={{ mr: 2 }} />
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
@@ -200,7 +200,7 @@ export default function Transfers() {
 
   return (
     <>
-      <AppBar position="static" sx={{ bgcolor: '#2E7D32' }}>
+      <AppBar position="static">
         <Toolbar>
           <TransferIcon sx={{ mr: 2 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>

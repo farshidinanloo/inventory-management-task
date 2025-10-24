@@ -68,7 +68,7 @@ export default function Warehouses() {
 
   return (
     <>
-      <AppBar position="static">
+        <AppBar position="static">
         <Toolbar>
           <InventoryIcon sx={{ mr: 2 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
