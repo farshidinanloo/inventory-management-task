@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Container,
@@ -17,72 +16,45 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  AppBar,
-  Toolbar,
   Box,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import { Stock as StockType, Product, Warehouse } from '@/types';
+import { AppBar } from '@/components';
+import { useStock, useProducts, useWarehouses, useStockOperations } from '@/hooks';
+import { LoadingSkeleton, ErrorDisplay } from '@/components';
+import { getProductName, getWarehouseName } from '@/utils/stockUtils';
 
 export default function Stock() {
-  const [stock, setStock] = useState<StockType[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [open, setOpen] = useState<boolean>(false);
-  const [selectedStockId, setSelectedStockId] = useState<number | null>(null);
+  const { data: stock = [], isLoading: stockLoading, isError: stockError, error: stockErrorData } = useStock();
+  const { data: products = [], isLoading: productsLoading, isError: productsError, error: productsErrorData } = useProducts();
+  const { data: warehouses = [], isLoading: warehousesLoading, isError: warehousesError, error: warehousesErrorData } = useWarehouses();
+  
+  const { open, handleClickOpen, handleClose, handleDelete, isDeleting } = useStockOperations();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const isLoading = stockLoading || productsLoading || warehousesLoading;
+  const isError = stockError || productsError || warehousesError;
+  const error = stockErrorData || productsErrorData || warehousesErrorData;
 
-  const fetchData = () => {
-    Promise.all([
-      fetch('/api/stock').then(res => res.json()),
-      fetch('/api/products').then(res => res.json()),
-      fetch('/api/warehouses').then(res => res.json()),
-    ]).then(([stockData, productsData, warehousesData]) => {
-      setStock(stockData);
-      setProducts(productsData);
-      setWarehouses(warehousesData);
-    });
-  };
+  if (isLoading) {
+    return (
+      <>
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <LoadingSkeleton />
+        </Container>
+      </>
+    );
+  }
 
-  const getProductName = (productId: number): string => {
-    const product = products.find(p => p.id === productId);
-    return product ? `${product.name} (${product.sku})` : 'Unknown';
-  };
-
-  const getWarehouseName = (warehouseId: number): string => {
-    const warehouse = warehouses.find(w => w.id === warehouseId);
-    return warehouse ? `${warehouse.name} (${warehouse.code})` : 'Unknown';
-  };
-
-  const handleClickOpen = (id: number) => {
-    setSelectedStockId(id);
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-    setSelectedStockId(null);
-  };
-
-  const handleDelete = async () => {
-    try {
-      const res = await fetch(`/api/stock/${selectedStockId}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        setStock(stock.filter((item) => item.id !== selectedStockId));
-        handleClose();
-      }
-    } catch (error) {
-      console.error('Error deleting stock:', error);
-    }
-  };
+  if (isError) {
+    return (
+      <>
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <ErrorDisplay error={error?.message || 'An error occurred'} />
+        </Container>
+      </>
+    );
+  }
 
   return (
     <>
@@ -114,8 +86,8 @@ export default function Stock() {
             <TableBody>
               {stock.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell>{getProductName(item.productId)}</TableCell>
-                  <TableCell>{getWarehouseName(item.warehouseId)}</TableCell>
+                  <TableCell>{getProductName(item.productId, products)}</TableCell>
+                  <TableCell>{getWarehouseName(item.warehouseId, warehouses)}</TableCell>
                   <TableCell align="right">{item.quantity}</TableCell>
                   <TableCell>
                     <IconButton
@@ -158,8 +130,13 @@ export default function Stock() {
             <Button onClick={handleClose} color="primary">
               Cancel
             </Button>
-            <Button onClick={handleDelete} color="error" autoFocus>
-              Delete
+            <Button 
+              onClick={handleDelete} 
+              color="error" 
+              autoFocus
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogActions>
         </Dialog>

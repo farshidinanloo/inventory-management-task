@@ -4,3 +4,6 @@ export { useWarehouseOperations } from './useWarehouseOperations';
 export { useWarehouseForm } from './useWarehouseForm';
 export { useWarehouseEdit } from './useWarehouseEdit';
 export { useTransfers as useTransferForm } from './useTransfers';
+export { useStockOperations } from './useStockOperations';
+export { useStockForm } from './useStockForm';
+export { useStockEdit } from './useStockEdit';

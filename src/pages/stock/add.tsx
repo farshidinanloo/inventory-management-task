@@ -1,5 +1,3 @@
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
   Container,
@@ -8,61 +6,57 @@ import {
   Button,
   Box,
   Paper,
-  AppBar,
-  Toolbar,
   MenuItem,
+  Alert,
 } from '@mui/material';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import { Stock, Product, Warehouse } from '@/types';
+import { useProducts, useWarehouses, useStockForm } from '@/hooks';
+import { LoadingSkeleton, ErrorDisplay } from '@/components';
 
 export default function AddStock() {
-  const [stock, setStock] = useState({
-    productId: '',
-    warehouseId: '',
-    quantity: '',
-  });
-  const [products, setProducts] = useState<Product[]>([]);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const { data: products = [], isLoading: productsLoading, isError: productsError, error: productsErrorData } = useProducts();
+  const { data: warehouses = [], isLoading: warehousesLoading, isError: warehousesError, error: warehousesErrorData } = useWarehouses();
+  
+  const { formData, handleChange, handleSubmit, isCreating, error } = useStockForm();
 
-  const router = useRouter();
+  const isLoading = productsLoading || warehousesLoading;
+  const isError = productsError || warehousesError;
+  const errorData = productsErrorData || warehousesErrorData;
 
-  useEffect(() => {
-    Promise.all([
-      fetch('/api/products').then(res => res.json()),
-      fetch('/api/warehouses').then(res => res.json()),
-    ]).then(([productsData, warehousesData]) => {
-      setProducts(productsData);
-      setWarehouses(warehousesData);
-    });
-  }, []);
+  if (isLoading) {
+    return (
+      <>
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <LoadingSkeleton />
+        </Container>
+      </>
+    );
+  }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setStock({ ...stock, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const res = await fetch('/api/stock', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        productId: parseInt(stock.productId),
-        warehouseId: parseInt(stock.warehouseId),
-        quantity: parseInt(stock.quantity),
-      }),
-    });
-    if (res.ok) {
-      router.push('/stock');
-    }
-  };
+  if (isError) {
+    return (
+      <>
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <ErrorDisplay error={errorData?.message || 'An error occurred'} />
+        </Container>
+      </>
+    );
+  }
 
   return (
     <>
+      
       <Container maxWidth="sm" sx={{ mt: 4, mb: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>
             Add Stock Record
           </Typography>
+          
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error?.message || 'An error occurred while creating the stock record'}
+            </Alert>
+          )}
+          
           <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
             <TextField
               margin="normal"
@@ -71,7 +65,7 @@ export default function AddStock() {
               select
               label="Product"
               name="productId"
-              value={stock.productId}
+              value={formData.productId}
               onChange={handleChange}
             >
               {products.map((product) => (
@@ -87,7 +81,7 @@ export default function AddStock() {
               select
               label="Warehouse"
               name="warehouseId"
-              value={stock.warehouseId}
+              value={formData.warehouseId}
               onChange={handleChange}
             >
               {warehouses.map((warehouse) => (
@@ -104,7 +98,7 @@ export default function AddStock() {
               name="quantity"
               type="number"
               inputProps={{ min: '0' }}
-              value={stock.quantity}
+              value={formData.quantity}
               onChange={handleChange}
             />
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
@@ -113,8 +107,9 @@ export default function AddStock() {
                 fullWidth
                 variant="contained"
                 color="primary"
+                disabled={isCreating}
               >
-                Add Stock
+                {isCreating ? 'Adding...' : 'Add Stock'}
               </Button>
               <Button
                 fullWidth

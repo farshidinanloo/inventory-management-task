@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import {
   Container,
   Typography,
@@ -8,67 +7,52 @@ import {
   Button,
   Box,
   Paper,
-  AppBar,
-  Toolbar,
   MenuItem,
-  CircularProgress,
+  Alert,
 } from '@mui/material';
-import InventoryIcon from '@mui/icons-material/Inventory';
-import { Stock, Product, Warehouse } from '@/types';
+import { AppBar } from '@/components';
+import { useProducts, useWarehouses, useStockEdit } from '@/hooks';
+import { LoadingSkeleton, ErrorDisplay } from '@/components';
 
 export default function EditStock() {
-  const [stock, setStock] = useState({
-    productId: '',
-    warehouseId: '',
-    quantity: '',
-  });
-  const [products, setProducts] = useState<Product[]>([]);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-
   const router = useRouter();
   const { id } = router.query;
+  
+  const { data: products = [], isLoading: productsLoading, isError: productsError, error: productsErrorData } = useProducts();
+  const { data: warehouses = [], isLoading: warehousesLoading, isError: warehousesError, error: warehousesErrorData } = useWarehouses();
+  
+  const { 
+    formData, 
+    handleChange, 
+    handleSubmit, 
+    isLoading: stockLoading, 
+    isError: stockError, 
+    fetchError, 
+    isUpdating, 
+    updateError 
+  } = useStockEdit(id as string);
 
-  useEffect(() => {
-    if (id) {
-      Promise.all([
-        fetch(`/api/stock/${id}`).then(res => res.json()),
-        fetch('/api/products').then(res => res.json()),
-        fetch('/api/warehouses').then(res => res.json()),
-      ]).then(([stockData, productsData, warehousesData]) => {
-        setStock(stockData);
-        setProducts(productsData);
-        setWarehouses(warehousesData);
-        setLoading(false);
-      });
-    }
-  }, [id]);
+  const isLoading = stockLoading || productsLoading || warehousesLoading;
+  const isError = stockError || productsError || warehousesError;
+  const error = fetchError || productsErrorData || warehousesErrorData;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setStock({ ...stock, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const res = await fetch(`/api/stock/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        productId: parseInt(stock.productId),
-        warehouseId: parseInt(stock.warehouseId),
-        quantity: parseInt(stock.quantity),
-      }),
-    });
-    if (res.ok) {
-      router.push('/stock');
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress />
-      </Box>
+      <>
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <LoadingSkeleton />
+        </Container>
+      </>
+    );
+  }
+
+  if (isError) {
+    return (
+      <>
+        <Container sx={{ mt: 4, mb: 4 }}>
+          <ErrorDisplay error={error?.message || 'An error occurred'} />
+        </Container>
+      </>
     );
   }
 
@@ -79,6 +63,13 @@ export default function EditStock() {
           <Typography variant="h4" component="h1" gutterBottom>
             Edit Stock Record
           </Typography>
+          
+          {updateError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {updateError?.message || 'An error occurred while updating the stock record'}
+            </Alert>
+          )}
+          
           <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
             <TextField
               margin="normal"
@@ -87,7 +78,7 @@ export default function EditStock() {
               select
               label="Product"
               name="productId"
-              value={stock.productId}
+              value={formData.productId}
               onChange={handleChange}
             >
               {products.map((product) => (
@@ -103,7 +94,7 @@ export default function EditStock() {
               select
               label="Warehouse"
               name="warehouseId"
-              value={stock.warehouseId}
+              value={formData.warehouseId}
               onChange={handleChange}
             >
               {warehouses.map((warehouse) => (
@@ -120,7 +111,7 @@ export default function EditStock() {
               name="quantity"
               type="number"
               inputProps={{ min: '0' }}
-              value={stock.quantity}
+              value={formData.quantity}
               onChange={handleChange}
             />
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
@@ -129,8 +120,9 @@ export default function EditStock() {
                 fullWidth
                 variant="contained"
                 color="primary"
+                disabled={isUpdating}
               >
-                Update Stock
+                {isUpdating ? 'Updating...' : 'Update Stock'}
               </Button>
               <Button
                 fullWidth
