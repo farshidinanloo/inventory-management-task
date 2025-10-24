@@ -48,7 +48,6 @@ export const useWarehouseEdit = (id: string) => {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  // Fetch warehouse data
   const {
     data: warehouse,
     isLoading,
@@ -60,11 +59,9 @@ export const useWarehouseEdit = (id: string) => {
     enabled: !!id,
   });
 
-  // Update warehouse mutation
   const updateWarehouseMutation = useMutation({
     mutationFn: updateWarehouse,
     onSuccess: () => {
-      // Invalidate and refetch warehouses data
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
       queryClient.invalidateQueries({ queryKey: createQueryKey.warehouse(id) });
       router.push('/warehouses');
@@ -74,7 +71,6 @@ export const useWarehouseEdit = (id: string) => {
     },
   });
 
-  // Update form data when warehouse data is loaded
   useEffect(() => {
     if (warehouse) {
       setFormData({

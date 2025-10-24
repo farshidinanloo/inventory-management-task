@@ -42,7 +42,6 @@ export const useWarehouseForm = () => {
   const createWarehouseMutation = useMutation({
     mutationFn: createWarehouse,
     onSuccess: () => {
-      // Invalidate and refetch warehouses data
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
       router.push('/warehouses');
     },

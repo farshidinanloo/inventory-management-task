@@ -25,7 +25,6 @@ export const useWarehouseOperations = () => {
   const deleteWarehouseMutation = useMutation({
     mutationFn: deleteWarehouse,
     onSuccess: () => {
-      // Invalidate and refetch warehouses data
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
       handleClose();
     },
